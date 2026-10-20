@@ -9,13 +9,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'assets/**/*'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'assets/**/*'],
       manifest: {
         name: 'Budget',
         short_name: 'Budget',
         description: 'Personal allowance tracker',
         theme_color: '#14110e',
-        background_color: '#ece5d3',
+        background_color: '#ececec',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
