@@ -20,7 +20,6 @@ export function useBudgetData(uid: string | undefined) {
   const [goals, setGoals] = useState<Goal[]>([])
   const [settings, setSettings] = useState<UserSettings>({ startingBalance: 0 })
   const [loading, setLoading] = useState(true)
-  const [goalsSeeded, setGoalsSeeded] = useState(false)
 
   useEffect(() => {
     if (!uid) {
@@ -52,7 +51,7 @@ export function useBudgetData(uid: string | undefined) {
       setLoading(false)
     })
 
-    const unsubGoals = onSnapshot(goalsRef, async (snap) => {
+    const unsubGoals = onSnapshot(goalsRef, (snap) => {
       const list: Goal[] = snap.docs.map((d) => ({
         id: d.id,
         name: d.data().name,
@@ -60,21 +59,19 @@ export function useBudgetData(uid: string | undefined) {
         image: d.data().image ?? undefined,
       }))
       setGoals(list)
-
-      if (!goalsSeeded && list.length === 0) {
-        setGoalsSeeded(true)
-        await addDoc(goalsRef, {
-          name: DEFAULT_GOAL_NAME,
-          target: DEFAULT_GOAL_TARGET,
-        })
-      }
     })
 
     const unsubSettings = onSnapshot(settingsRef, (snap) => {
       if (snap.exists()) {
         setSettings({ startingBalance: snap.data().startingBalance ?? 0 })
-      } else {
+      } else if (!snap.metadata.fromCache) {
+        // Brand-new account (confirmed by the server): create settings and
+        // the starter goal exactly once. Deleting the goal later stays deleted.
         void setDoc(settingsRef, { startingBalance: 0 })
+        void addDoc(goalsRef, {
+          name: DEFAULT_GOAL_NAME,
+          target: DEFAULT_GOAL_TARGET,
+        })
       }
     })
 
@@ -83,7 +80,7 @@ export function useBudgetData(uid: string | undefined) {
       unsubGoals()
       unsubSettings()
     }
-  }, [uid, goalsSeeded])
+  }, [uid])
 
   const addEntry = useCallback(
     async (entry: Omit<Entry, 'id'>): Promise<string | undefined> => {
