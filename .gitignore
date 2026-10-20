@@ -11,3 +11,5 @@ dist-ssr
 .taste-skill
 firebase-config.snippet.txt
 .impeccable/
+.vercel
+.env*
