@@ -28,6 +28,8 @@ export interface Goal {
   id: string
   name: string
   target: number
+  /** Small JPEG data URL of what the user is saving for. */
+  image?: string
 }
 
 export interface UserSettings {

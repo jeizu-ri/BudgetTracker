@@ -32,6 +32,15 @@ export function RememberWhyCard() {
 
       {spotlight ? (
         <div className="mt-4">
+          {spotlight.g.image && (
+            <div className="mb-4 aspect-[16/10] w-full overflow-hidden rounded-frame bg-frame">
+              <img
+                src={spotlight.g.image}
+                alt={spotlight.g.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
           <p className="text-lg font-bold leading-snug text-ink">
             {spotlight.g.name}
           </p>

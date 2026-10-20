@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   onSnapshot,
   setDoc,
@@ -56,6 +57,7 @@ export function useBudgetData(uid: string | undefined) {
         id: d.id,
         name: d.data().name,
         target: d.data().target,
+        image: d.data().image ?? undefined,
       }))
       setGoals(list)
 
@@ -103,19 +105,34 @@ export function useBudgetData(uid: string | undefined) {
   )
 
   const addGoal = useCallback(
-    async (name: string, target: number) => {
+    async (name: string, target: number, image?: string) => {
       if (!uid) return
       const db = getDb()
-      await addDoc(collection(db, 'users', uid, 'goals'), { name, target })
+      await addDoc(collection(db, 'users', uid, 'goals'), {
+        name,
+        target,
+        ...(image ? { image } : {}),
+      })
     },
     [uid],
   )
 
   const updateGoal = useCallback(
-    async (id: string, patch: Partial<Pick<Goal, 'name' | 'target'>>) => {
+    async (
+      id: string,
+      patch: Partial<Pick<Goal, 'name' | 'target'>> & {
+        /** string sets the picture, null removes it, undefined leaves it alone */
+        image?: string | null
+      },
+    ) => {
       if (!uid) return
       const db = getDb()
-      await updateDoc(doc(db, 'users', uid, 'goals', id), patch)
+      const { image, ...rest } = patch
+      await updateDoc(doc(db, 'users', uid, 'goals', id), {
+        ...rest,
+        ...(image === null ? { image: deleteField() } : {}),
+        ...(typeof image === 'string' ? { image } : {}),
+      })
     },
     [uid],
   )

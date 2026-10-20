@@ -1,5 +1,6 @@
-﻿import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { GoalImagePicker } from '../components/GoalImagePicker'
 import { PageIntro } from '../components/PageIntro'
 import { ProgressBar } from '../components/ProgressBar'
 import { UndoToast } from '../components/UndoToast'
@@ -35,10 +36,12 @@ export function GoalsPage() {
   const [name, setName] = useState('')
   const [target, setTarget] = useState('')
   const [depositAmount, setDepositAmount] = useState('')
+  const [image, setImage] = useState<string | null>(null)
 
   const openAdd = () => {
     setName('')
     setTarget('')
+    setImage(null)
     setSheet('add')
   }
 
@@ -46,6 +49,7 @@ export function GoalsPage() {
     setActiveGoal(g)
     setName(g.name)
     setTarget(String(g.target))
+    setImage(g.image ?? null)
     setSheet('edit')
   }
 
@@ -58,7 +62,7 @@ export function GoalsPage() {
   const saveNew = async () => {
     const t = Number(target)
     if (!name.trim() || !t || t <= 0) return
-    await addGoal(name.trim(), t)
+    await addGoal(name.trim(), t, image ?? undefined)
     setSheet(null)
   }
 
@@ -66,7 +70,11 @@ export function GoalsPage() {
     if (!activeGoal) return
     const t = Number(target)
     if (!name.trim() || !t || t <= 0) return
-    await updateGoal(activeGoal.id, { name: name.trim(), target: t })
+    await updateGoal(activeGoal.id, {
+      name: name.trim(),
+      target: t,
+      image,
+    })
     setSheet(null)
   }
 
@@ -108,6 +116,15 @@ export function GoalsPage() {
           return (
             <li key={g.id}>
               <Surface as="div">
+                {g.image && (
+                  <div className="mb-4 aspect-[16/10] w-full overflow-hidden rounded-frame bg-frame">
+                    <img
+                      src={g.image}
+                      alt={`${g.name}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="text-xl font-bold leading-snug text-ink">
@@ -163,6 +180,7 @@ export function GoalsPage() {
         <SheetContent>
           <SheetTitle>{sheet === 'add' ? 'New goal' : 'Edit goal'}</SheetTitle>
           <div className="mt-5 space-y-3">
+            <GoalImagePicker value={image} onChange={setImage} />
             <Input
               placeholder="Name"
               value={name}
