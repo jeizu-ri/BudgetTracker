@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from 'react'
 import { CategoryBreakdown } from '../components/CategoryBreakdown'
+import { GoalHistory } from '../components/GoalHistory'
 import { PageIntro } from '../components/PageIntro'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -90,6 +91,8 @@ export function ReviewPage() {
           <CategoryBreakdown breakdown={breakdown} />
         </div>
       </section>
+
+      <GoalHistory entries={entries} goals={goals} />
 
       {sunday && !keepDismissed && (
         <section>
