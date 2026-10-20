@@ -1,42 +1,57 @@
-# BudgetTracker
+# Budget
 
-A personal allowance tracker PWA for one person — Philippine pesos (₱), Firebase sync across iPhone and iPad, purple-themed UI.
+A calm, offline-friendly allowance tracker for students, built as an installable web app (PWA). Track a weekly allowance in Philippine pesos (₱), log spending in two taps, and save toward goals you can actually see.
 
-## Local setup (Windows)
+The interface is designed like a **contact sheet**: your week is a row of seven numbered frames, the balance is printed on proof-paper, and a red grease-pencil mark circles today. Light mode is proof paper, dark mode is a darkroom desk.
 
-1. **Install [Node.js](https://nodejs.org/)** (LTS, v22+ recommended) and **Git**.
-2. Clone the repo and install dependencies:
+## Features
 
-   ```powershell
-   cd C:\path\to\BudgetTracker
-   npm install
-   ```
+- **Balance at a glance**: starting balance plus every entry, with a daily pace until the next Monday allowance.
+- **Week frames**: Monday to Sunday, today circled in red, tap it to log an expense.
+- **Quick logging**: amount plus category (Food, Transport, School, Fun, Bills, Other), and one-tap repeat chips for things you buy often.
+- **Undo anything**: every log can be undone from a toast or from the Activity list.
+- **Fix my balance**: enter the cash you actually have and the difference is logged.
+- **Monday allowance**: one tap to log your allowance.
+- **Goals with pictures**: add a photo of what you're saving for, move money into it, and watch the progress frames fill.
+- **Review**: week totals, category breakdown, Sunday leftovers, and a full **goal history** showing every deposit per goal.
+- **Remember why**: your closest goal and a rotating reminder on the home screen.
+- **Works offline**: Firestore offline persistence syncs when you're back online.
+- **Light and dark themes**, installable on iPhone, iPad, and Android.
 
-3. Copy `.env.example` to `.env.local` and fill in Firebase values (see Firebase setup below).
-4. Run the app:
+## Tech stack
 
-   ```powershell
-   npm run dev
-   ```
+React, Vite, TypeScript, Tailwind CSS v4, Framer Motion, Radix UI primitives, Firebase Auth (email/password) and Firestore, `vite-plugin-pwa`.
 
-5. Open the URL shown in the terminal (usually `http://localhost:5173`).
+## Getting started
 
-## Personal photos
+Requires [Node.js](https://nodejs.org/) 20 or newer.
 
-Place resized images (~600px wide) in `public/assets/`:
+```bash
+git clone https://github.com/jeizu-ri/BudgetTracker.git
+cd BudgetTracker
+npm install
+cp .env.example .env.local   # then fill in your Firebase values
+npm run dev
+```
 
-- `camera.jpg` — Fujifilm X-T5 with lens  
-- `idol1.jpg` — idol photo 1  
-- `idol2.jpg` — idol photo 2  
+On Windows PowerShell use `Copy-Item .env.example .env.local`. Open the URL printed in the terminal, usually `http://localhost:5173`.
 
-See `public/assets/PHOTOS.md`.
+### Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local development |
+| `npm run build` | Type-check and build to `dist/` |
+| `npm run preview` | Preview the production build |
 
 ## Firebase setup
 
-1. Go to [Firebase Console](https://console.firebase.google.com/) → **Create a project** (e.g. `budget-tracker-personal`).
+This app stores each user's data under `users/{uid}` in Firestore. You bring your own Firebase project.
+
+1. In the [Firebase Console](https://console.firebase.google.com/), create a project.
 2. **Authentication** → Sign-in method → enable **Email/Password** only.
-3. **Firestore Database** → Create database (production mode is fine; rules below lock it down).
-4. **Project settings** → Your apps → **Web** → register app → copy config into `.env.local`:
+3. **Firestore Database** → create a database.
+4. **Project settings** → Your apps → **Web** → register an app, then copy the config into `.env.local`:
 
    | Variable | Firebase config field |
    |----------|------------------------|
@@ -47,52 +62,29 @@ See `public/assets/PHOTOS.md`.
    | `VITE_FIREBASE_MESSAGING_SENDER_ID` | messagingSenderId |
    | `VITE_FIREBASE_APP_ID` | appId |
 
-5. **Firestore rules** → Rules tab → paste the contents of `firestore.rules` in this repo → **Publish**.
+5. **Firestore rules** → paste the contents of [`firestore.rules`](firestore.rules) and publish. They let a signed-in user read and write only their own data and deny everything else.
+6. **Authentication → Users** → add your account (email and password).
+7. The app has **no sign-up screen**. To stop anyone creating accounts through the Firebase API, also disable new sign-ups in the console (Authentication → Settings → User actions).
 
-6. **Create her account**: Authentication → Users → **Add user** (email + password). She uses this on iPhone and iPad.
+> A Firebase web config is not a secret, and these values end up in the built app. Your protection is the Firestore rules and disabled sign-ups, not hiding the keys. Never commit `.env.local`.
 
-7. **Authorized domains** (after Vercel deploy): Authentication → Settings → Authorized domains → add your Vercel URL (e.g. `budget-tracker-xxx.vercel.app`) and your custom domain if you add one.
+## Deploying to Vercel
 
-### Stop public sign-ups
+1. Import the repository in [Vercel](https://vercel.com). The Vite preset is detected automatically.
+2. Add the six `VITE_FIREBASE_*` variables for Production (and Preview if you like).
+3. Deploy. Every push to `main` redeploys.
+4. In Firebase → Authentication → Settings → **Authorized domains**, add your Vercel domain, or sign-in will fail.
+5. If you want the site to open without a Vercel login, turn off Vercel Authentication under the project's Deployment Protection settings. The app still requires a Firebase sign-in.
 
-After her account exists:
+## Install on your phone
 
-- **Authentication** → Settings → **User actions** → disable **Allow new users to sign up** (wording may vary by console version), **or**
-- Keep sign-up disabled in the app (this project has **no sign-up UI**); only sign-in works. Without console sign-up disabled, someone could still register via the Firebase API — disabling sign-up in the console is the real lock.
+Open the deployed URL, sign in, then use **Share → Add to Home Screen** (iOS Safari) or **Install app** (Chrome on Android).
 
-## Vercel deployment
+## How goal pictures are stored
 
-1. Push this repo to GitHub (private `BudgetTracker`).
-2. [vercel.com](https://vercel.com) → **Add New Project** → import **BudgetTracker**.
-3. Framework preset: **Vite** (auto-detected).
-4. Add the same six `VITE_FIREBASE_*` variables under **Environment Variables** for Production (and Preview if you want).
-5. Deploy. No `vercel.json` is required for a standard static Vite build (`npm run build`, output `dist`).
+Pictures are resized in the browser to about 800px and about 100 KB, then saved as a small JPEG inside the goal's Firestore document. This keeps the app free of extra services such as Firebase Storage, and it syncs and works offline like everything else.
 
-**Auto-deploy:** Every push to `main` redeploys when the GitHub repo is connected in Vercel project settings.
+## Project notes
 
-## Add to iPhone / iPad Home Screen
-
-1. Open the deployed URL in **Safari**.
-2. Sign in with her Firebase email and password (once per device).
-3. **Share** → **Add to Home Screen** → name it “Budget”.
-4. Repeat on the other device with the same account. Firestore syncs entries in real time (offline entries sync when back online).
-
-## Pre-launch checklist
-
-- [ ] Sign in on iPhone and iPad with the same account  
-- [ ] Set **starting balance** in Settings  
-- [ ] Log an expense on iPhone → confirm it appears on iPad within a few seconds  
-- [ ] Log **allowance** on a Monday (or test with income entry)  
-- [ ] **Fix my balance** records a `balance_fix` and updates the big number  
-- [ ] Move money to a goal → balance drops, goal progress increases  
-- [ ] Turn off Wi‑Fi, add an expense, turn Wi‑Fi on → entry syncs  
-- [ ] Add the three photos under `public/assets/` and redeploy  
-- [ ] Sunday: open **Review** tab and try “Move leftovers” (optional)
-
-## Scripts
-
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Local development |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Preview production build |
+- [`PRODUCT.md`](PRODUCT.md): who it's for, constraints, and brand commitments.
+- [`DESIGN.md`](DESIGN.md): the design system (colors, type, components).
