@@ -1,5 +1,5 @@
 export const REMEMBER_CAPTIONS = [
-  'Would they spend ₱300 on milk tea? 👀',
+  'DIRTY MATCHA AGAIN?!?!',
   'Camera fund isn’t going to fill itself.',
   'Future you has a camera. Be nice to her.',
   'One less impulse buy = one step closer to that lens.',
