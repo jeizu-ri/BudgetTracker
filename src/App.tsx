@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { AppMark } from './components/AppMark'
 import { BottomNav } from './components/BottomNav'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { BudgetProvider } from './contexts/BudgetContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { weekRangeLabel } from './lib/dates'
 import { ConfigMissingPage } from './pages/ConfigMissingPage'
 import { GoalsPage } from './pages/GoalsPage'
 import { HomePage } from './pages/HomePage'
@@ -18,8 +20,14 @@ function Shell() {
   if (!configured) return <ConfigMissingPage />
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center text-[var(--color-muted)]">
-        Loading…
+      <div
+        className="safe-pt safe-px flex min-h-dvh flex-col items-center justify-center gap-4"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <AppMark />
+        <p className="text-sm text-muted">Loading…</p>
       </div>
     )
   }
@@ -27,13 +35,14 @@ function Shell() {
 
   return (
     <BudgetProvider>
-      <div className="mx-auto min-h-dvh max-w-lg safe-pt safe-px pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
-        <header className="py-3">
-          <p className="text-sm font-semibold text-[var(--color-accent)] dark:text-[var(--color-accent-dark)]">
-            Budget
+      <div className="mx-auto min-h-dvh w-full max-w-lg safe-pt safe-px pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:max-w-2xl">
+        <header className="mb-8 flex items-center justify-between gap-4 border-b border-rule pb-3">
+          <AppMark />
+          <p className="edge text-[13px] leading-none text-muted">
+            {weekRangeLabel()}
           </p>
         </header>
-        <main>
+        <main id="main-content">
           {tab === 'home' && <HomePage />}
           {tab === 'goals' && <GoalsPage />}
           {tab === 'review' && <ReviewPage />}

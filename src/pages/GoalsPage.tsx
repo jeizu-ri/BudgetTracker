@@ -1,16 +1,16 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+﻿import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { DecorativePhoto } from '../components/DecorativePhoto'
+import { PageIntro } from '../components/PageIntro'
 import { ProgressBar } from '../components/ProgressBar'
+import { UndoToast } from '../components/UndoToast'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Sheet, SheetContent, SheetTitle } from '../components/ui/sheet'
+import { Surface } from '../components/ui/surface'
 import { useBudget } from '../contexts/BudgetContext'
+import { useOfferUndo } from '../hooks/useOfferUndo'
 import { calculateBalance, formatPeso, goalProgress } from '../lib/money'
 import type { Goal } from '../types'
-
-const CAMERA_GOAL_HINT = 'X-T5'
 
 export function GoalsPage() {
   const {
@@ -21,7 +21,10 @@ export function GoalsPage() {
     updateGoal,
     deleteGoal,
     addEntry,
+    removeEntry,
   } = useBudget()
+  const { undoMessage, offerUndo, dismissUndo, performUndo } =
+    useOfferUndo(removeEntry)
   const balance = useMemo(
     () => calculateBalance(settings.startingBalance, entries),
     [settings.startingBalance, entries],
@@ -32,7 +35,6 @@ export function GoalsPage() {
   const [name, setName] = useState('')
   const [target, setTarget] = useState('')
   const [depositAmount, setDepositAmount] = useState('')
-  const reduce = useReducedMotion()
 
   const openAdd = () => {
     setName('')
@@ -72,76 +74,68 @@ export function GoalsPage() {
     if (!activeGoal) return
     const n = Number(depositAmount)
     if (!n || n <= 0 || n > balance) return
-    await addEntry({
+    const id = await addEntry({
       timestamp: Date.now(),
       type: 'goal_deposit',
       amount: n,
       goalId: activeGoal.id,
     })
     setSheet(null)
+    await offerUndo(id, `Moved ${formatPeso(n)} to goal`)
   }
 
   return (
-    <div className="space-y-4 pb-4">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-            Savings goals
-          </h1>
-          <p className="text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-            Move money when you’re ready — it leaves your spendable balance.
-          </p>
-        </div>
-        <Button size="icon" onClick={openAdd} aria-label="Add goal">
+    <div className="page-stack">
+      <div className="flex items-start justify-between gap-3">
+        <PageIntro
+          title="Goals"
+          description="Money you move here leaves spendable balance."
+        />
+        <Button size="icon" className="shrink-0" onClick={openAdd} aria-label="Add goal">
           <Plus className="h-5 w-5" />
         </Button>
       </div>
 
-      <ul className="space-y-4">
-        {goals.map((g, i) => {
+      {goals.length === 0 && (
+        <p className="text-[15px] text-muted">
+          No goals yet. Tap + to add one.
+        </p>
+      )}
+
+      <ul className="flex flex-col gap-8">
+        {goals.map((g) => {
           const { saved, percent } = goalProgress(g, entries)
-          const showCamera = g.name.includes(CAMERA_GOAL_HINT)
           return (
-            <motion.li
-              key={g.id}
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-card)] shadow-[0_12px_40px_-24px_rgba(91,33,182,0.35)] dark:bg-[var(--color-card-dark)]"
-            >
-              {showCamera && (
-                <DecorativePhoto
-                  src="/assets/camera.jpg"
-                  alt="Fujifilm X-T5 camera goal"
-                  className="h-36 w-full rounded-none"
-                />
-              )}
-              <div className="p-4">
+            <li key={g.id}>
+              <Surface as="div">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h2 className="text-lg font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-bold leading-snug text-ink">
                       {g.name}
                     </h2>
-                    <p className="mt-1 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
+                    <p className="mt-1 font-tabular text-[15px] text-body">
                       {formatPeso(saved)} of {formatPeso(g.target)}
                     </p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="-mr-2 flex shrink-0">
                     <button
                       type="button"
-                      className="tap-highlight-none rounded-xl p-2 text-[var(--color-muted)]"
+                      className="tap-highlight-none flex h-11 w-11 items-center justify-center text-muted hover:text-ink"
                       aria-label="Edit goal"
                       onClick={() => openEdit(g)}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-[18px] w-[18px]" strokeWidth={1.75} />
                     </button>
                     <button
                       type="button"
-                      className="tap-highlight-none rounded-xl p-2 text-[var(--color-muted)]"
+                      className="tap-highlight-none flex h-11 w-11 items-center justify-center text-muted hover:text-accent"
                       aria-label="Delete goal"
-                      onClick={() => deleteGoal(g.id)}
+                      onClick={() => {
+                        if (window.confirm(`Delete "${g.name}"? Money already moved to it stays out of your balance.`))
+                          void deleteGoal(g.id)
+                      }}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
                     </button>
                   </div>
                 </div>
@@ -149,15 +143,15 @@ export function GoalsPage() {
                   <ProgressBar percent={percent} />
                 </div>
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   className="mt-4 w-full"
                   onClick={() => openDeposit(g)}
                   disabled={balance <= 0}
                 >
-                  Move money here
+                  Move money
                 </Button>
-              </div>
-            </motion.li>
+              </Surface>
+            </li>
           )
         })}
       </ul>
@@ -170,13 +164,13 @@ export function GoalsPage() {
           <SheetTitle>{sheet === 'add' ? 'New goal' : 'Edit goal'}</SheetTitle>
           <div className="mt-5 space-y-3">
             <Input
-              placeholder="Goal name"
+              placeholder="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             <Input
               inputMode="decimal"
-              placeholder="Target amount"
+              placeholder="Target (₱)"
               value={target}
               onChange={(e) => setTarget(e.target.value.replace(/[^\d.]/g, ''))}
             />
@@ -196,9 +190,9 @@ export function GoalsPage() {
         onOpenChange={(o) => !o && setSheet(null)}
       >
         <SheetContent>
-          <SheetTitle>Move to {activeGoal?.name}</SheetTitle>
-          <p className="mt-1 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-            Available: {formatPeso(balance)}
+          <SheetTitle>{activeGoal?.name}</SheetTitle>
+          <p className="mt-2 text-sm text-muted">
+            Available {formatPeso(balance)}
           </p>
           <div className="mt-5 space-y-3">
             <Input
@@ -215,6 +209,12 @@ export function GoalsPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <UndoToast
+        message={undoMessage}
+        onUndo={performUndo}
+        onDismiss={dismissUndo}
+      />
     </div>
   )
 }

@@ -1,8 +1,10 @@
 import { Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { PageIntro } from '../components/PageIntro'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
+import { SectionTitle } from '../components/ui/section-title'
 import { useAuth } from '../contexts/AuthContext'
 import { useBudget } from '../contexts/BudgetContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -27,22 +29,19 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-5 pb-4">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-          Settings
-        </h1>
-        <p className="text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-          Starting point and preferences.
-        </p>
-      </div>
+    <div className="page-stack">
+      <PageIntro title="Settings" />
 
-      <section className="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 dark:bg-[var(--color-card-dark)]">
-        <Label htmlFor="starting">Starting balance</Label>
-        <p className="mt-1 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-          What she had in her wallet when she first started using the app.
+      <section>
+        <SectionTitle>
+          <Label htmlFor="starting" className="edge text-[17px] leading-none">
+            Starting balance
+          </Label>
+        </SectionTitle>
+        <p className="mt-3 text-sm text-muted">
+          Cash in the wallet when you first set up the app.
         </p>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <Input
             id="starting"
             inputMode="decimal"
@@ -50,32 +49,33 @@ export function SettingsPage() {
             onChange={(e) =>
               setStarting(e.target.value.replace(/[^\d.]/g, ''))
             }
+            className="font-tabular"
           />
-          <Button onClick={saveStarting}>Save</Button>
+          <Button onClick={saveStarting} className="shrink-0 sm:px-6">
+            Save
+          </Button>
         </div>
         {saved && (
-          <p className="mt-2 text-sm text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
+          <p className="mt-2 text-sm font-semibold text-ink" role="status">
             Saved.
           </p>
         )}
       </section>
 
-      <section className="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 dark:bg-[var(--color-card-dark)]">
-        <p className="font-medium text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-          Appearance
-        </p>
+      <section>
+        <SectionTitle>Theme</SectionTitle>
         <Button
           variant="secondary"
-          className="mt-3 w-full justify-between"
+          className="mt-4 w-full justify-between"
           onClick={toggleTheme}
         >
           {theme === 'light' ? (
             <>
-              Light mode <Sun className="h-5 w-5" />
+              Contact sheet <Sun className="h-5 w-5" strokeWidth={1.75} />
             </>
           ) : (
             <>
-              Dark mode <Moon className="h-5 w-5" />
+              Darkroom <Moon className="h-5 w-5" strokeWidth={1.75} />
             </>
           )}
         </Button>

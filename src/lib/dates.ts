@@ -69,6 +69,51 @@ function ymdToManilaStartMs(ymd: string): number {
   return Date.UTC(y, m - 1, d, 16, 0, 0)
 }
 
+export interface WeekDay {
+  /** Mon … Sun */
+  label: string
+  /** Day of month, Manila */
+  dayNum: number
+  /** YYYY-MM-DD in Manila */
+  ymd: string
+  isToday: boolean
+  isFuture: boolean
+}
+
+const WEEK_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+
+/** The seven days (Mon–Sun) of the current Manila week, for the frame row. */
+export function currentWeekDays(now = new Date()): WeekDay[] {
+  const todayYmd = manilaYmd(now)
+  const wd = manilaWeekday(now)
+  const sinceMonday = wd === 0 ? 6 : wd - 1
+  return WEEK_LABELS.map((label, i) => {
+    const ymd = addDaysToYmd(todayYmd, i - sinceMonday)
+    return {
+      label,
+      dayNum: Number(ymd.slice(8, 10)),
+      ymd,
+      isToday: ymd === todayYmd,
+      isFuture: ymd > todayYmd,
+    }
+  })
+}
+
+/** "Oct 20 – 26" or "Oct 28 – Nov 3" for the header. */
+export function weekRangeLabel(now = new Date()): string {
+  const days = currentWeekDays(now)
+  const fmt = (ymd: string, withMonth: boolean) =>
+    new Date(`${ymd}T12:00:00+08:00`).toLocaleDateString('en-PH', {
+      timeZone: MANILA_TZ,
+      month: withMonth ? 'short' : undefined,
+      day: 'numeric',
+    })
+  const first = days[0].ymd
+  const last = days[6].ymd
+  const sameMonth = first.slice(5, 7) === last.slice(5, 7)
+  return `${fmt(first, true)} – ${fmt(last, !sameMonth)}`
+}
+
 export function isInCurrentWeekManila(
   timestampMs: number,
   now = new Date(),

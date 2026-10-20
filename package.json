@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:firebase": "node scripts/verify-firebase.mjs",
+    "import:firebase": "node scripts/import-firebase-config.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.3.1",

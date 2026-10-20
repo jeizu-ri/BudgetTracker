@@ -4,26 +4,21 @@ import * as React from 'react'
 import { cn } from '../../lib/utils'
 
 const buttonVariants = cva(
-  'tap-highlight-none inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-[15px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-45 active:scale-[0.97] dark:focus-visible:ring-[var(--color-accent-dark)] dark:focus-visible:ring-offset-[var(--color-bg-dark)]',
+  'tap-highlight-none inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper disabled:pointer-events-none disabled:opacity-40 active:opacity-85',
   {
     variants: {
       variant: {
-        default:
-          'bg-[var(--color-accent)] text-white shadow-[0_8px_24px_-8px_rgba(124,58,237,0.55)] hover:brightness-105 dark:bg-[var(--color-accent-dark)] dark:text-[#1a1028] dark:shadow-[0_8px_24px_-8px_rgba(167,139,250,0.45)]',
-        secondary:
-          'bg-[var(--color-chip)] text-[var(--color-heading)] hover:brightness-[0.98] dark:bg-[var(--color-chip-dark)] dark:text-[var(--color-heading-dark)]',
-        ghost:
-          'bg-transparent text-[var(--color-heading)] hover:bg-[var(--color-chip)]/80 dark:text-[var(--color-heading-dark)] dark:hover:bg-[var(--color-chip-dark)]',
-        outline:
-          'border border-[var(--color-chip)] bg-transparent text-[var(--color-heading)] dark:border-[var(--color-chip-dark)] dark:text-[var(--color-heading-dark)]',
-        rose:
-          'bg-[#fce8ec] text-[var(--color-rose-text)] dark:bg-[#3a2430] dark:text-[#f0b8c0]',
+        default: 'bg-accent text-on-accent hover:brightness-110',
+        secondary: 'border border-rule bg-chip text-ink hover:border-ink/40',
+        ghost: 'bg-transparent text-ink underline-offset-4 hover:underline',
+        outline: 'border border-ink/70 bg-transparent text-ink hover:bg-chip',
+        warn: 'bg-chip text-warn',
       },
       size: {
-        default: 'h-12 px-5',
-        sm: 'h-10 rounded-xl px-4 text-sm',
-        lg: 'h-14 rounded-2xl px-6 text-base',
-        icon: 'h-11 w-11 rounded-xl',
+        default: 'h-12 px-4',
+        sm: 'h-9 px-3 text-sm',
+        lg: 'h-14 px-5 text-base',
+        icon: 'h-11 w-11',
       },
     },
     defaultVariants: {

@@ -1,9 +1,10 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { CategoryBreakdown } from '../components/CategoryBreakdown'
+import { PageIntro } from '../components/PageIntro'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Sheet, SheetContent, SheetTitle } from '../components/ui/sheet'
+import { SectionTitle } from '../components/ui/section-title'
 import { useBudget } from '../contexts/BudgetContext'
 import { isSundayInManila } from '../lib/dates'
 import {
@@ -22,8 +23,8 @@ export function ReviewPage() {
   const summary = useMemo(() => weekSummary(entries), [entries])
   const breakdown = useMemo(() => categoryBreakdown(entries), [entries])
   const sunday = isSundayInManila()
-  const reduce = useReducedMotion()
 
+  const [keepDismissed, setKeepDismissed] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [moveAmount, setMoveAmount] = useState('')
@@ -45,98 +46,92 @@ export function ReviewPage() {
     setSelectedGoal(null)
   }
 
+  const stats = [
+    { label: 'In', value: summary.received },
+    { label: 'Out', value: summary.spent },
+    {
+      label: sunday ? 'Left' : 'Balance',
+      value: sunday ? summary.left : balance,
+    },
+  ]
+
   return (
-    <div className="space-y-5 pb-4">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-          Week review
-        </h1>
-        <p className="text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-          {sunday
-            ? 'Sunday check-in — no pressure, just clarity.'
-            : 'Your week so far (full Sunday summary unlocks on Sunday).'}
-        </p>
-      </div>
+    <div className="page-stack">
+      <PageIntro
+        title="Review"
+        description={
+          sunday
+            ? 'Sunday — move leftovers if you want.'
+            : 'Week totals (Mon–Sun, Manila time).'
+        }
+      />
 
-      <motion.section
-        initial={reduce ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-3 gap-2"
-      >
-        {[
-          { label: 'Received', value: summary.received },
-          { label: 'Spent', value: summary.spent },
-          {
-            label: sunday ? 'Left' : 'Balance',
-            value: sunday ? summary.left : balance,
-          },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="rounded-2xl bg-[var(--color-card)] p-3 text-center dark:bg-[var(--color-card-dark)]"
-          >
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-              {item.label}
-            </p>
-            <p className="mt-1 font-display text-lg font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-              {formatPeso(item.value)}
-            </p>
-          </div>
-        ))}
-      </motion.section>
-
-      <section className="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 dark:bg-[var(--color-card-dark)]">
-        <h2 className="mb-3 font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-          Category breakdown
-        </h2>
-        <CategoryBreakdown breakdown={breakdown} />
+      <section>
+        <dl className="border-t border-rule">
+          {stats.map((item) => (
+            <div
+              key={item.label}
+              className="flex items-baseline justify-between border-b border-rule py-3.5"
+            >
+              <dt className="edge text-base leading-none text-muted">
+                {item.label}
+              </dt>
+              <dd className="numeral text-[34px] text-ink">
+                {formatPeso(item.value)}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
-      {sunday && (
-        <section className="rounded-[var(--radius-card)] bg-[var(--color-chip)]/70 p-4 dark:bg-[var(--color-chip-dark)]/80">
-          <h2 className="font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-            Move your leftovers?
-          </h2>
+      <section>
+        <SectionTitle>Categories</SectionTitle>
+        <div className="mt-4">
+          <CategoryBreakdown breakdown={breakdown} />
+        </div>
+      </section>
+
+      {sunday && !keepDismissed && (
+        <section>
+          <SectionTitle>Leftovers</SectionTitle>
           {balance <= 0 ? (
-            <p className="mt-2 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-              Nothing to move right now — that’s fine. Your balance stays as is.
-            </p>
+            <p className="mt-4 text-[15px] text-muted">Nothing left to move.</p>
           ) : (
             <>
-              <p className="mt-2 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-                You have {formatPeso(balance)} still spendable. Want to tuck some
-                into a goal?
+              <p className="mt-4 text-[15px] text-body">
+                {formatPeso(balance)} still spendable.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-col gap-1">
                 <Button onClick={() => setMoveOpen(true)} disabled={!canMove}>
                   Move to a goal
                 </Button>
-                <Button variant="ghost" onClick={() => undefined}>
-                  Skip — keep in balance
+                <Button
+                  variant="ghost"
+                  className="text-muted hover:text-ink"
+                  onClick={() => setKeepDismissed(true)}
+                >
+                  Keep in balance
                 </Button>
               </div>
             </>
           )}
         </section>
       )}
-
       <Sheet open={moveOpen} onOpenChange={setMoveOpen}>
         <SheetContent>
-          <SheetTitle>Move leftovers</SheetTitle>
-          <p className="mt-1 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-            Pick one goal and an amount.
-          </p>
+          <SheetTitle>Move to goal</SheetTitle>
           <div className="mt-5 space-y-3">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-x-3 gap-y-3" role="group" aria-label="Goal">
               {goals.map((g) => (
                 <button
                   key={g.id}
                   type="button"
                   onClick={() => setSelectedGoal(g.id)}
-                  className={`tap-highlight-none rounded-full px-4 py-2 text-sm font-semibold ${
+                  aria-pressed={selectedGoal === g.id}
+                  className={`tap-highlight-none relative min-h-11 rounded-control border px-4 text-[15px] font-semibold ${
                     selectedGoal === g.id
-                      ? 'bg-[var(--color-accent)] text-white dark:bg-[var(--color-accent-dark)] dark:text-[#1a1028]'
-                      : 'bg-[var(--color-chip)] text-[var(--color-heading)] dark:bg-[var(--color-chip-dark)] dark:text-[var(--color-heading-dark)]'
+                      ? 'border-frame bg-frame text-frame-ink'
+                      : 'border-rule text-ink'
                   }`}
                 >
                   {g.name}
@@ -157,7 +152,7 @@ export function ReviewPage() {
               disabled={!selectedGoal}
               onClick={onMove}
             >
-              Confirm move
+              Confirm
             </Button>
           </div>
         </SheetContent>

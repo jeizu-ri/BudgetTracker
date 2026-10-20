@@ -1,6 +1,5 @@
 import {
   animate,
-  motion,
   useMotionValue,
   useMotionValueEvent,
   useReducedMotion,
@@ -24,15 +23,15 @@ export function AnimatedBalance({ value }: { value: number }) {
       return
     }
     const controls = animate(motionVal, value, {
-      duration: 0.55,
+      duration: 0.4,
       ease: [0.22, 1, 0.36, 1],
     })
     return () => controls.stop()
   }, [value, motionVal, reduce])
 
   return (
-    <motion.span className="font-display text-[2.75rem] leading-none font-semibold tracking-tight text-white drop-shadow-sm">
+    <span className="numeral block text-[clamp(3.5rem,19vw,5.25rem)] text-ink">
       {display}
-    </motion.span>
+    </span>
   )
 }

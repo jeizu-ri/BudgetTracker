@@ -31,6 +31,43 @@ export function balanceFixDelta(
   return realCash - currentBalance
 }
 
+export function describeEntry(
+  entry: Entry,
+  goalName?: string,
+): { title: string; subtitle: string } {
+  const when = new Date(entry.timestamp).toLocaleString('en-PH', {
+    timeZone: 'Asia/Manila',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+  switch (entry.type) {
+    case 'income':
+      return { title: `Allowance in · ${formatPeso(entry.amount)}`, subtitle: when }
+    case 'expense':
+      return {
+        title: `${entry.category ?? 'Expense'} · ${formatPeso(entry.amount)}`,
+        subtitle: when,
+      }
+    case 'goal_deposit':
+      return {
+        title: `Moved to ${goalName ?? 'goal'} · ${formatPeso(entry.amount)}`,
+        subtitle: when,
+      }
+    case 'balance_fix':
+      return {
+        title:
+          entry.amount < 0
+            ? `Unlogged spending · ${formatPeso(Math.abs(entry.amount))}`
+            : `Balance adjustment · +${formatPeso(entry.amount)}`,
+        subtitle: when,
+      }
+    default:
+      return { title: 'Entry', subtitle: when }
+  }
+}
+
 export function formatPeso(amount: number): string {
   const rounded = Math.round(amount)
   const abs = Math.abs(rounded).toLocaleString('en-PH')

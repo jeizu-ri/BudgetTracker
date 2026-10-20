@@ -84,10 +84,11 @@ export function useBudgetData(uid: string | undefined) {
   }, [uid, goalsSeeded])
 
   const addEntry = useCallback(
-    async (entry: Omit<Entry, 'id'>) => {
-      if (!uid) return
+    async (entry: Omit<Entry, 'id'>): Promise<string | undefined> => {
+      if (!uid) return undefined
       const db = getDb()
-      await addDoc(collection(db, 'users', uid, 'entries'), entry)
+      const ref = await addDoc(collection(db, 'users', uid, 'entries'), entry)
+      return ref.id
     },
     [uid],
   )

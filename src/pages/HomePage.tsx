@@ -1,13 +1,16 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { Plus, Trash2, Wrench } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { AnimatedBalance } from '../components/AnimatedBalance'
+﻿import { useMemo, useState } from 'react'
 import { CategoryBreakdown } from '../components/CategoryBreakdown'
 import { QuickAddSheet } from '../components/QuickAddSheet'
+import { RecentActivity } from '../components/RecentActivity'
 import { RememberWhyCard } from '../components/RememberWhyCard'
+import { UndoToast } from '../components/UndoToast'
+import { BalanceHero } from '../components/home/BalanceHero'
+import { QuickRepeatRow } from '../components/home/QuickRepeatRow'
+import { useOfferUndo } from '../hooks/useOfferUndo'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Sheet, SheetContent, SheetTitle } from '../components/ui/sheet'
+import { SectionTitle } from '../components/ui/section-title'
 import { useBudget } from '../contexts/BudgetContext'
 import { daysUntilNextMonday, isMondayInManila } from '../lib/dates'
 import {
@@ -22,7 +25,9 @@ import {
 import type { ExpenseCategory } from '../types'
 
 export function HomePage() {
-  const { entries, settings, addEntry, removeEntry } = useBudget()
+  const { entries, goals, settings, addEntry, removeEntry } = useBudget()
+  const { undoMessage, offerUndo, dismissUndo, performUndo } =
+    useOfferUndo(removeEntry)
   const balance = useMemo(
     () => calculateBalance(settings.startingBalance, entries),
     [settings.startingBalance, entries],
@@ -42,34 +47,27 @@ export function HomePage() {
   const [allowanceAmount, setAllowanceAmount] = useState('4000')
   const [fixOpen, setFixOpen] = useState(false)
   const [realCash, setRealCash] = useState('')
-  const reduce = useReducedMotion()
-
-  const recentList = useMemo(
-    () =>
-      [...entries]
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .filter((e) => e.type === 'expense')
-        .slice(0, 8),
-    [entries],
-  )
 
   const logExpense = async (amount: number, category: ExpenseCategory) => {
-    await addEntry({
+    const id = await addEntry({
       timestamp: Date.now(),
       type: 'expense',
       amount,
       category,
     })
+    await offerUndo(id, `Logged ${category} ${formatPeso(amount)}`)
   }
 
   const onAllowance = async () => {
     const n = Number(allowanceAmount)
     if (!n || n <= 0) return
-    await addEntry({ timestamp: Date.now(), type: 'income', amount: n })
+    const id = await addEntry({ timestamp: Date.now(), type: 'income', amount: n })
     setAllowanceOpen(false)
+    await offerUndo(id, `Added allowance ${formatPeso(n)}`)
   }
 
   const onFixBalance = async () => {
+    if (realCash.trim() === '') return
     const real = Number(realCash)
     if (Number.isNaN(real)) return
     const delta = balanceFixDelta(balance, real)
@@ -77,142 +75,68 @@ export function HomePage() {
       setFixOpen(false)
       return
     }
-    await addEntry({
+    const id = await addEntry({
       timestamp: Date.now(),
       type: 'balance_fix',
       amount: delta,
     })
     setFixOpen(false)
     setRealCash('')
+    await offerUndo(id, 'Balance updated')
   }
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="page-stack">
       {isMondayInManila() && (
-        <motion.button
+        <button
           type="button"
-          initial={reduce ? false : { opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
           onClick={() => setAllowanceOpen(true)}
-          className="tap-highlight-none w-full rounded-[var(--radius-card)] bg-[var(--color-chip)] px-4 py-3 text-left text-sm font-medium text-[var(--color-heading)] dark:bg-[var(--color-chip-dark)] dark:text-[var(--color-heading-dark)]"
+          className="tap-highlight-none relative min-h-12 w-full rounded-control border border-ink bg-transparent px-4 text-left text-[15px] font-semibold text-ink"
         >
-          Did your allowance come in? Tap to log it →
-        </motion.button>
+          Log Monday allowance
+        </button>
       )}
 
-      <section
-        className="relative overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] p-6 shadow-[0_20px_50px_-20px_rgba(91,33,182,0.65)]"
-      >
-        <p className="text-sm font-medium text-white/80">Available now</p>
-        <div className="mt-2">
-          <AnimatedBalance value={balance} />
-        </div>
-        <p className="mt-4 text-sm text-white/85">
-          About {formatPeso(pace)} a day until Monday
-        </p>
-        {over != null && (
-          <p className="mt-2 text-sm font-medium text-[#f5c4cb]">
-            You’re {formatPeso(over)} over for the week — still okay, just a
-            nudge.
-          </p>
-        )}
-        <Button
-          variant="secondary"
-          size="sm"
-          className="mt-4 bg-white/15 text-white hover:bg-white/25"
-          onClick={() => setFixOpen(true)}
-        >
-          <Wrench className="h-4 w-4" />
-          Fix my balance
-        </Button>
-      </section>
+      <BalanceHero
+        balance={balance}
+        pace={pace}
+        daysUntilMonday={days}
+        overAmount={over}
+        entries={entries}
+        onFixBalance={() => setFixOpen(true)}
+        onLogExpense={() => {
+          setPreset({})
+          setQuickOpen(true)
+        }}
+      />
 
-      <section className="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 dark:bg-[var(--color-card-dark)]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-              Quick add
-            </p>
-            <p className="text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-              Amount → category → done
-            </p>
-          </div>
-          <Button
-            size="icon"
-            className="rounded-2xl"
-            onClick={() => {
-              setPreset({})
-              setQuickOpen(true)
-            }}
-            aria-label="Add expense"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </div>
-
-        {recents.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {recents.map((r) => (
-              <button
-                key={`${r.category}-${r.amount}`}
-                type="button"
-                className="tap-highlight-none rounded-full bg-[var(--color-chip)] px-3 py-2 text-sm font-semibold text-[var(--color-heading)] active:scale-[0.97] dark:bg-[var(--color-chip-dark)] dark:text-[var(--color-heading-dark)]"
-                onClick={() => logExpense(r.amount, r.category)}
-              >
-                {r.category} {formatPeso(r.amount)}
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
+      {recents.length > 0 && (
+        <section>
+          <SectionTitle className="mb-3">Log again</SectionTitle>
+          <QuickRepeatRow recents={recents} onRepeat={logExpense} />
+        </section>
+      )}
 
       <RememberWhyCard />
 
-      <section className="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 dark:bg-[var(--color-card-dark)]">
-        <h2 className="mb-3 font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-          Where it went this week
-        </h2>
-        <CategoryBreakdown breakdown={breakdown} />
+      <section>
+        <SectionTitle>This week</SectionTitle>
+        <div className="mt-4">
+          <CategoryBreakdown breakdown={breakdown} />
+        </div>
       </section>
 
-      {recentList.length > 0 && (
-        <section className="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 dark:bg-[var(--color-card-dark)]">
-          <h2 className="mb-3 font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-            Recent expenses
-          </h2>
-          <ul className="space-y-2">
-            {recentList.map((e) => (
-              <li
-                key={e.id}
-                className="flex items-center justify-between gap-2 rounded-2xl bg-[var(--color-chip)]/60 px-3 py-2.5 dark:bg-[var(--color-chip-dark)]/80"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-heading)] dark:text-[var(--color-heading-dark)]">
-                    {e.category} · {formatPeso(e.amount)}
-                  </p>
-                  <p className="text-xs text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-                    {new Date(e.timestamp).toLocaleString('en-PH', {
-                      timeZone: 'Asia/Manila',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="tap-highlight-none rounded-xl p-2 text-[var(--color-muted)] hover:bg-white/50 dark:hover:bg-black/20"
-                  aria-label="Delete entry"
-                  onClick={() => removeEntry(e.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <RecentActivity
+        entries={entries}
+        goals={goals}
+        onUndo={(id) => removeEntry(id)}
+      />
+
+      <UndoToast
+        message={undoMessage}
+        onUndo={performUndo}
+        onDismiss={dismissUndo}
+      />
 
       <QuickAddSheet
         open={quickOpen}
@@ -224,10 +148,7 @@ export function HomePage() {
 
       <Sheet open={allowanceOpen} onOpenChange={setAllowanceOpen}>
         <SheetContent>
-          <SheetTitle>Allowance in</SheetTitle>
-          <p className="mt-1 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-            How much came in today?
-          </p>
+          <SheetTitle>Allowance</SheetTitle>
           <div className="mt-5 space-y-3">
             <Input
               inputMode="decimal"
@@ -235,7 +156,7 @@ export function HomePage() {
               onChange={(e) =>
                 setAllowanceAmount(e.target.value.replace(/[^\d.]/g, ''))
               }
-              className="text-xl font-semibold"
+              className="text-lg font-semibold"
             />
             <Button
               variant="secondary"
@@ -245,7 +166,7 @@ export function HomePage() {
               ₱4,000
             </Button>
             <Button size="lg" className="w-full" onClick={onAllowance}>
-              Add to balance
+              Add
             </Button>
           </div>
         </SheetContent>
@@ -253,23 +174,27 @@ export function HomePage() {
 
       <Sheet open={fixOpen} onOpenChange={setFixOpen}>
         <SheetContent>
-          <SheetTitle>Fix my balance</SheetTitle>
-          <p className="mt-1 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-            Type how much cash you actually have. We’ll log the gap as unlogged
-            spending.
+          <SheetTitle>Fix balance</SheetTitle>
+          <p className="mt-2 text-sm text-muted">
+            Enter cash you actually have. We log the difference.
           </p>
           <div className="mt-5 space-y-3">
             <Input
               inputMode="decimal"
-              placeholder="Real cash on hand"
+              placeholder="Cash on hand"
               value={realCash}
               onChange={(e) =>
                 setRealCash(e.target.value.replace(/[^\d.]/g, ''))
               }
-              className="text-xl font-semibold"
+              className="text-lg font-semibold"
             />
-            <Button size="lg" className="w-full" onClick={onFixBalance}>
-              Update balance
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={realCash.trim() === ''}
+              onClick={onFixBalance}
+            >
+              Update
             </Button>
           </div>
         </SheetContent>
