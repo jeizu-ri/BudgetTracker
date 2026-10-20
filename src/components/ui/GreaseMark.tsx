@@ -20,9 +20,12 @@ export function GreaseMark({
       preserveAspectRatio="none"
       aria-hidden
       focusable="false"
-      className={cn('pointer-events-none absolute overflow-visible', className)}
+      className={cn(
+        'grease-svg pointer-events-none absolute overflow-visible',
+        className,
+      )}
     >
-      <path className="grease" d={PATHS[variant]} pathLength={1} />
+      <path className="grease" d={PATHS[variant]} />
     </svg>
   )
 }

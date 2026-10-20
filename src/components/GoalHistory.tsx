@@ -42,10 +42,13 @@ export function GoalHistory({
     if (orphans.length) {
       named.push({ key: 'deleted', name: 'Deleted goal', items: orphans })
     }
-    return named.map((g) => ({
-      ...g,
-      total: g.items.reduce((s, e) => s + e.amount, 0),
-    }))
+    return named
+      .map((g) => ({
+        ...g,
+        total: g.items.reduce((s, e) => s + e.amount, 0),
+      }))
+      // Goal you most recently saved into comes first (items are newest-first).
+      .sort((a, b) => b.items[0].timestamp - a.items[0].timestamp)
   }, [entries, goals])
 
   return (
