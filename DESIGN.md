@@ -358,6 +358,9 @@ A hairline-separated line with a small 10×14px frame mark: solid for money in o
 ### App Mark
 A 28px black frame cell holding a condensed peso numeral beside the word "Budget" in edge caps. The PWA icons repeat it: a dark cell, a cream peso sign, and a red pencil stroke.
 
+### Violet palette (optional, chosen in Settings)
+A second palette the user can pick, independent of light/dark mode. Same sheet printed on lavender stock with a violet pencil: the single accent becomes violet (light #6d28d9, dark #b794f6) and the neutrals are tinted to match (paper #ebe6f3 / #120e1c, sheet #f6f3fa / #1b1627, frame cells #1b1430 / #2b2340, ink #17112a / #efe9fb). Still exactly one accent; ochre stays the over-budget colour. Applied with `html.theme-violet` (`.dark` stacks on top), stored in `localStorage` as `budget-palette`, and set before first paint by a small script in `index.html`.
+
 ## Do's and Don'ts
 
 ### Do:

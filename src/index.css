@@ -38,6 +38,40 @@ html.dark {
   color-scheme: dark;
 }
 
+/* Violet palette: the same sheet printed on lavender stock with a violet pencil.
+   Must stay after html.dark; the compound selector wins for violet + dark. */
+html.theme-violet {
+  --paper: #ebe6f3;
+  --sheet: #f6f3fa;
+  --chip: #ddd5ea;
+  --ink: #17112a;
+  --body: #2b2340;
+  --muted: #655b80;
+  --rule: #b7aacb;
+  --accent: #6d28d9;
+  --on-accent: #f6f3fa;
+  --warn: #8f5a14;
+  --frame: #1b1430;
+  --frame-ink: #efe9fb;
+  --frame-muted: #a99fc2;
+}
+
+html.theme-violet.dark {
+  --paper: #120e1c;
+  --sheet: #1b1627;
+  --chip: #261f36;
+  --ink: #efe9fb;
+  --body: #ddd4ef;
+  --muted: #a095bb;
+  --rule: #3b3252;
+  --accent: #b794f6;
+  --on-accent: #120e1c;
+  --warn: #e0a24a;
+  --frame: #2b2340;
+  --frame-ink: #efe9fb;
+  --frame-muted: #a99fc2;
+}
+
 @theme inline {
   --font-sans: 'Hanken Grotesk', system-ui, sans-serif;
   --font-edge: 'Archivo', 'Arial Narrow', sans-serif;

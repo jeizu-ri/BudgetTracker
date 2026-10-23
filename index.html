@@ -9,6 +9,23 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#ece5d3" />
+    <script>
+      /* Apply the saved mode and palette before first paint (no flash). */
+      (function () {
+        try {
+          var t = localStorage.getItem('budget-theme')
+          var dark = t
+            ? t === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+          var h = document.documentElement
+          h.classList.toggle('dark', dark)
+          h.classList.toggle(
+            'theme-violet',
+            localStorage.getItem('budget-palette') === 'violet',
+          )
+        } catch (e) {}
+      })()
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Budget" />
