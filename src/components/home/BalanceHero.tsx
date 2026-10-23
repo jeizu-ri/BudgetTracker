@@ -1,11 +1,11 @@
-import { Plus } from 'lucide-react'
+import { Plus, Wallet } from 'lucide-react'
 import { AnimatedBalance } from '../AnimatedBalance'
 import { Button } from '../ui/button'
 import { formatPeso } from '../../lib/money'
 import type { Entry } from '../../types'
 import { WeekFrames } from './WeekFrames'
 
-/** The balance is printed straight on the sheet, then the week's frames, then the two actions. */
+/** The balance is printed straight on the sheet, then the week's frames, then the actions. */
 export function BalanceHero({
   balance,
   pace,
@@ -14,6 +14,7 @@ export function BalanceHero({
   entries,
   onFixBalance,
   onLogExpense,
+  onAddAllowance,
 }: {
   balance: number
   pace: number
@@ -22,6 +23,7 @@ export function BalanceHero({
   entries: Entry[]
   onFixBalance: () => void
   onLogExpense: () => void
+  onAddAllowance: () => void
 }) {
   return (
     <section aria-label="Current balance" className="space-y-6">
@@ -46,10 +48,19 @@ export function BalanceHero({
 
       <WeekFrames entries={entries} onTodayPress={onLogExpense} />
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Button size="lg" className="w-full" onClick={onLogExpense}>
           <Plus className="h-5 w-5" strokeWidth={2.25} />
           Log expense
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full"
+          onClick={onAddAllowance}
+        >
+          <Wallet className="h-5 w-5" strokeWidth={1.75} />
+          Add allowance
         </Button>
         <Button
           variant="ghost"

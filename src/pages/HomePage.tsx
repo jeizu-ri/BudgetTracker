@@ -12,13 +12,14 @@ import { Input } from '../components/ui/input'
 import { Sheet, SheetContent, SheetTitle } from '../components/ui/sheet'
 import { SectionTitle } from '../components/ui/section-title'
 import { useBudget } from '../contexts/BudgetContext'
-import { daysUntilNextMonday, isMondayInManila } from '../lib/dates'
+import { daysUntilNextMonday } from '../lib/dates'
 import {
   balanceFixDelta,
   calculateBalance,
   categoryBreakdown,
   dailyPace,
   formatPeso,
+  recentAllowanceAmounts,
   recentExpensePresets,
   weeklyOverspend,
 } from '../lib/money'
@@ -44,7 +45,9 @@ export function HomePage() {
     category?: ExpenseCategory
   }>({})
   const [allowanceOpen, setAllowanceOpen] = useState(false)
-  const [allowanceAmount, setAllowanceAmount] = useState('4000')
+  const [allowanceAmount, setAllowanceAmount] = useState('')
+  const allowanceValue = Number(allowanceAmount) || 0
+  const allowanceChips = useMemo(() => recentAllowanceAmounts(entries), [entries])
   const [fixOpen, setFixOpen] = useState(false)
   const [realCash, setRealCash] = useState('')
 
@@ -63,6 +66,7 @@ export function HomePage() {
     if (!n || n <= 0) return
     const id = await addEntry({ timestamp: Date.now(), type: 'income', amount: n })
     setAllowanceOpen(false)
+    setAllowanceAmount('')
     await offerUndo(id, `Added allowance ${formatPeso(n)}`)
   }
 
@@ -87,16 +91,6 @@ export function HomePage() {
 
   return (
     <div className="page-stack">
-      {isMondayInManila() && (
-        <button
-          type="button"
-          onClick={() => setAllowanceOpen(true)}
-          className="tap-highlight-none relative min-h-12 w-full rounded-control border border-ink bg-transparent px-4 text-left text-[15px] font-semibold text-ink"
-        >
-          Log Monday allowance
-        </button>
-      )}
-
       <BalanceHero
         balance={balance}
         pace={pace}
@@ -104,6 +98,10 @@ export function HomePage() {
         overAmount={over}
         entries={entries}
         onFixBalance={() => setFixOpen(true)}
+        onAddAllowance={() => {
+          setAllowanceAmount('')
+          setAllowanceOpen(true)
+        }}
         onLogExpense={() => {
           setPreset({})
           setQuickOpen(true)
@@ -148,24 +146,60 @@ export function HomePage() {
 
       <Sheet open={allowanceOpen} onOpenChange={setAllowanceOpen}>
         <SheetContent>
-          <SheetTitle>Allowance</SheetTitle>
-          <div className="mt-5 space-y-3">
+          <SheetTitle>Add allowance</SheetTitle>
+          <p className="mt-2 text-sm text-muted">
+            Type what you just received. It is added to what you have left.
+          </p>
+          <div className="mt-5 space-y-4">
             <Input
               inputMode="decimal"
+              placeholder="Amount received"
+              aria-label="Allowance received in pesos"
               value={allowanceAmount}
               onChange={(e) =>
                 setAllowanceAmount(e.target.value.replace(/[^\d.]/g, ''))
               }
-              className="text-lg font-semibold"
+              className="h-14 text-2xl font-semibold"
+              autoFocus
             />
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => setAllowanceAmount('4000')}
+
+            <div
+              className="flex flex-wrap gap-x-3 gap-y-3"
+              role="group"
+              aria-label="Quick amounts"
             >
-              ₱4,000
-            </Button>
-            <Button size="lg" className="w-full" onClick={onAllowance}>
+              {allowanceChips.map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  onClick={() => setAllowanceAmount(String(amt))}
+                  aria-pressed={Number(allowanceAmount) === amt}
+                  className={`tap-highlight-none min-h-11 rounded-control border px-4 text-[15px] font-semibold ${
+                    Number(allowanceAmount) === amt
+                      ? 'border-frame bg-frame text-frame-ink'
+                      : 'border-rule bg-transparent text-ink'
+                  }`}
+                >
+                  {formatPeso(amt)}
+                </button>
+              ))}
+            </div>
+
+            {allowanceValue > 0 && (
+              <p className="text-[15px] text-body" aria-live="polite">
+                {formatPeso(balance)} left + {formatPeso(allowanceValue)} ={' '}
+                <span className="font-tabular font-bold text-ink">
+                  {formatPeso(balance + allowanceValue)}
+                </span>
+              </p>
+            )}
+
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={allowanceValue <= 0}
+              onClick={onAllowance}
+            >
               Add
             </Button>
           </div>

@@ -166,3 +166,27 @@ export function recentExpensePresets(
   }
   return result
 }
+
+/** Amounts you've logged as allowance before (most recent first), for one-tap chips. */
+export function recentAllowanceAmounts(entries: Entry[], limit = 3): number[] {
+  const seen = new Set<number>()
+  const result: number[] = []
+  const sorted = [...entries]
+    .filter((e) => e.type === 'income')
+    .sort((a, b) => b.timestamp - a.timestamp)
+  for (const e of sorted) {
+    if (seen.has(e.amount)) continue
+    seen.add(e.amount)
+    result.push(e.amount)
+    if (result.length >= limit) break
+  }
+  // New to the app: offer sensible starters until real history exists.
+  for (const starter of [1000, 500]) {
+    if (result.length >= 2) break
+    if (!seen.has(starter)) {
+      seen.add(starter)
+      result.push(starter)
+    }
+  }
+  return result
+}
